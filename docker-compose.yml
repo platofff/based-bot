@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  kalbot:
+    build: .
+    volumes_from:
+    - redis
+    volumes:
+    - ${FIREBASE_KEY_PATH:-/dev/null}:/firebase-adminsdk.json:ro
+    environment:
+      REDIS_URI: unix:///tmp/redis.sock
+      VK_BOT_TOKEN: ${VK_BOT_TOKEN}
+      DEBUG: ${DEBUG}
+      STATS: ${STATS}
+      STATS_CHAT: ${STATS_CHAT}
+      FIREBASE_DB_URL: ${FIREBASE_DB_URL}
+      ANSWERS_CHAT: ${ANSWERS_CHAT}
+  redis:
+    image: redis:6-alpine
+    command: redis-server --unixsocket /tmp/redis.sock --unixsocketperm 777 --appendonly yes
+    volumes:
+    - /tmp
+    - redis-data:/data
+
+volumes:
+  redis-data:
