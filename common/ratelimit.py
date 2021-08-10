@@ -1,6 +1,5 @@
 from datetime import datetime
 from math import ceil
-from sys import getsizeof
 from typing import Union
 
 

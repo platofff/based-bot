@@ -1,4 +1,3 @@
-#!/usr/local/bin/pypy
 import asyncio
 import concurrent.futures
 import functools

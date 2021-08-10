@@ -44,7 +44,7 @@ class Freespeak:
                         mi = f'm:{i}'
                         mtr = mtr.hset(mi, 'text', initial[_id]['text']) \
                             .hset(mi, 'answers', ' '.join([str(x) for x in initial[_id]['answers']])
-                        if initial[_id]['answers'] is not None else '').zadd('m', {f'm:{i}': int(_id)})
+                                  if initial[_id]['answers'] is not None else '').zadd('m', {f'm:{i}': int(_id)})
                         all_keywords = await self._get_keywords(initial[_id]['text'])
 
                         for kw in all_keywords:
@@ -79,7 +79,6 @@ class Freespeak:
                 if _id[1] == most_common:
                     ids.append(_id[0])
             chosen = choice(ids)
-            print(chosen)
             index = int((await self._messages_db.zrangebyscore('m', chosen, chosen))[0][2:])
             answers = (await self._messages_db.hget(f'm:{index}', 'answers')).split()
             if not answers:
@@ -88,7 +87,6 @@ class Freespeak:
                 await callback(await self._messages_db.hget(f'm:{index - 1}', 'text'))
             else:
                 chosen = int(choice(answers))
-                print(chosen)
                 await callback(
                     await self._messages_db.hget(
                         (await self._messages_db.zrangebyscore('m', chosen, chosen))[0], 'text'))

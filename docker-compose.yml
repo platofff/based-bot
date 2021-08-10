@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  kalbot:
+  basedbot:
     build: .
     volumes_from:
     - redis
@@ -9,6 +9,8 @@ services:
     - ${FIREBASE_KEY_PATH:-/dev/null}:/firebase-adminsdk.json:ro
     environment:
       REDIS_URI: unix:///tmp/redis.sock
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
       VK_BOT_TOKEN: ${VK_BOT_TOKEN}
       DEBUG: ${DEBUG}
       STATS: ${STATS}
