@@ -3,7 +3,7 @@ import time
 from math import ceil
 from os import getenv
 from threading import Thread
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Callable
 
 import firebase_admin
 from firebase_admin import credentials
@@ -14,7 +14,7 @@ from vk_specific.onlinedetect import OnlineDetect
 
 
 class FirebaseStatsThread(Thread):
-    def __init__(self, bot: Bot, online_detect: OnlineDetect):
+    def __init__(self, bot: Bot, online_detect: OnlineDetect, excepthook: Callable[[BaseException], None]):
         Thread.__init__(self)
         cred = credentials.Certificate('/firebase-adminsdk.json')
         self._app = firebase_admin.initialize_app(cred, {'databaseURL': getenv('FIREBASE_DB_URL')})
@@ -28,6 +28,7 @@ class FirebaseStatsThread(Thread):
         self._online_detect = online_detect
         self._online_history = None
         self._running = True
+        self._excepthook = excepthook
 
     async def _get_stats(self) -> Tuple[Dict[str, Union[Union[Dict[int, List[str]], float, int]]], Dict[str, int],
                                         Dict[int, List[Union[str, int]]]]:
@@ -76,9 +77,12 @@ class FirebaseStatsThread(Thread):
         self._members_active_ref.set(res[2])
 
     def run(self):
-        while self._running:
-            self._update_stats()
-            time.sleep(self._update_interval)
+        try:
+            while self._running:
+                self._update_stats()
+                time.sleep(self._update_interval)
+        except BaseException as e:
+            self._excepthook(e)
 
     def stop(self):
         self._running = False

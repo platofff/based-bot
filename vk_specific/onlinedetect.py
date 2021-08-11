@@ -1,3 +1,4 @@
+import asyncio
 from os import getenv
 from typing import List, Dict
 
@@ -17,8 +18,11 @@ class OnlineDetect:
         return self
 
     async def update_uid(self, uid: int) -> None:
+        uid = str(uid)
         async with self._db.pipeline(transaction=True) as tr:
-            await tr.set(str(uid), 1).expire(str(uid), 300).incr(str(uid)).execute()
+            c = [tr.set(uid, 1).expire(uid, 300).incr(uid).execute()]
+        c.append(self._db2.incr(uid))
+        await asyncio.wait(c)
 
     async def get_online(self) -> List[int]:
         return [int(x) for x in await self._db.keys('*')]

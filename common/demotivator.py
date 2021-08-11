@@ -1,14 +1,11 @@
 import logging
 import re
-from http.client import RemoteDisconnected
 from math import floor, ceil
 from typing import Union
 from urllib import request
-from urllib.error import HTTPError, URLError
 
 from wand.color import Color
 from wand.drawing import Drawing
-from wand.exceptions import MissingDelegateError
 from wand.font import Font
 from wand.image import Image
 

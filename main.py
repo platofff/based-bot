@@ -2,7 +2,9 @@ import asyncio
 import concurrent.futures
 import functools
 import itertools
+import sys
 import threading
+import traceback
 from collections import OrderedDict
 from concurrent.futures import ProcessPoolExecutor
 from os import getenv
@@ -51,6 +53,13 @@ stats: FirebaseStatsThread
 online_detect: OnlineDetect
 online_detect_handler: typing.Callable[[Message], None]
 freespeak: Freespeak
+
+
+def excepthook(exctype, value, tb):
+    logging.debug(f'Thread {threading.get_ident()} raised {exctype}: {value}\nTraceback:\n{traceback.format_tb(tb)}')
+
+
+sys.ecxepthook = excepthook
 
 
 def command_limit(command: str):
@@ -363,20 +372,20 @@ async def main():
     if getenv('STATS'):
         online_detect = await OnlineDetect.new(redis_uri)
 
-        def firebase_except_hook(args):
-            global stats
-            if args.thread == stats:
-                stats.stop()
-                stats = FirebaseStatsThread(bot, online_detect)
-                stats.start()
-
         @bot.on.chat_message(rules.FromPeerRule(online_detect.peer))
         async def online_detect_handler(message: Message):
             await online_detect.update_uid(message.from_id)
 
-        stats = FirebaseStatsThread(bot, online_detect)
+        def firebase_restart(exception: BaseException):
+            global stats
+            logging.error(f'Thread {stats} raised exception: {exception}\nTraceback:')
+            traceback.print_tb(exception.__traceback__)
+            stats.stop()
+            stats = FirebaseStatsThread(bot, online_detect)
+            stats.start()
+
+        stats = FirebaseStatsThread(bot, online_detect, firebase_restart)
         stats.start()
-        threading.excepthook = firebase_except_hook
 
     answers = getenv('ANSWERS_CHAT')
     if answers:
