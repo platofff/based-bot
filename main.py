@@ -381,7 +381,7 @@ async def main():
             logging.error(f'Thread {stats} raised exception: {exception}\nTraceback:')
             traceback.print_tb(exception.__traceback__)
             stats.stop()
-            stats = FirebaseStatsThread(bot, online_detect)
+            stats = FirebaseStatsThread(bot, online_detect, firebase_restart)
             stats.start()
 
         stats = FirebaseStatsThread(bot, online_detect, firebase_restart)
