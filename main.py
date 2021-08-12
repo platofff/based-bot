@@ -85,7 +85,7 @@ commands = {'start': ['/начать', '/start', '/команды', '/commands',
             'objection_conf': ['/обжекшонконф', '/objectionconf'],
             'zhirinovskysuggested': ['/жириновский', '/жирик', '/zhirinovsky',
                                      '/жириновский <_>', '/жирик <_>', '/zhirinovsky <_>'],
-            'freespeak': ['/фриспик <_>', '/фриспик']}
+            'freespeak': ['/freespeak <_>', '/фриспик <_>']}
 
 
 @bot.on.message(text=commands['start'])
@@ -402,7 +402,8 @@ Traceback:
             if not arguments:
                 await message.answer('Вопрос фриспику: /фриспик <вопрос>')
                 return
-            freespeak.get_answer(get_arguments(message.text), callback)
+
+            freespeak.get_answer(arguments, callback)
 
         @bot.on.message(rules.FromPeerRule(answers))
         async def freespeak_db_handler(message: Message):
