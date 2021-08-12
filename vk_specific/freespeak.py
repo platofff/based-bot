@@ -12,6 +12,8 @@ import aioredis
 import pymorphy2
 from vkbottle.bot import Message
 
+from common.tagsformatter import TagsFormatter
+
 logger = logging.getLogger(__name__)
 
 
@@ -84,12 +86,14 @@ class Freespeak:
             if not answers:
                 if index == 0:
                     return await error()
-                await callback(await self._messages_db.hget(f'm:{index - 1}', 'text'))
+                await callback(await self._messages_db.hget(f'm:{index + 1}', 'text'))
             else:
                 chosen = int(choice(answers))
                 await callback(
-                    await self._messages_db.hget(
-                        (await self._messages_db.zrangebyscore('m', chosen, chosen))[0], 'text'))
+                    re.sub(r'[*@]', '',
+                           TagsFormatter.format(
+                            await self._messages_db.hget(
+                                (await self._messages_db.zrangebyscore('m', chosen, chosen))[0], 'text'))))
 
         asyncio.ensure_future(_get_answer(), loop=self._loop)
 

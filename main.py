@@ -85,7 +85,7 @@ commands = {'start': ['/начать', '/start', '/команды', '/commands',
             'objection_conf': ['/обжекшонконф', '/objectionconf'],
             'zhirinovskysuggested': ['/жириновский', '/жирик', '/zhirinovsky',
                                      '/жириновский <_>', '/жирик <_>', '/zhirinovsky <_>'],
-            'freespeak': ['/freespeak <_>', '/фриспик <_>']}
+            'freespeak': ['/фриспик <_>', '/фриспик']}
 
 
 @bot.on.message(text=commands['start'])
@@ -378,8 +378,9 @@ async def main():
 
         def firebase_restart(exception: BaseException):
             global stats
-            logging.error(f'Thread {stats} raised exception: {exception}\nTraceback:')
-            traceback.print_tb(exception.__traceback__)
+            logging.debug(f'''Thread {stats} raised exception: {exception}
+Traceback:
+{traceback.format_tb(exception.__traceback__)}''')
             stats.stop()
             stats = FirebaseStatsThread(bot, online_detect, firebase_restart)
             stats.start()
@@ -397,6 +398,10 @@ async def main():
         async def freespeak_handler(message: Message, _: str):
             async def callback(answer: str):
                 await message.answer(answer)
+            arguments = get_arguments(message.text)
+            if not arguments:
+                await message.answer('Вопрос фриспику: /фриспик <вопрос>')
+                return
             freespeak.get_answer(get_arguments(message.text), callback)
 
         @bot.on.message(rules.FromPeerRule(answers))
@@ -404,6 +409,7 @@ async def main():
             if not message.text or message.text.startswith('/'):
                 return
             freespeak.add_message(message)
+
 
 if __name__ == '__main__':
     bot.loop_wrapper.add_task(main())
