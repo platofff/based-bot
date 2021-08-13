@@ -20,7 +20,7 @@ class OnlineDetect:
     async def update_uid(self, uid: int) -> None:
         uid = str(uid)
         async with self._db.pipeline(transaction=True) as tr:
-            c = [tr.set(uid, 1).expire(uid, 300).incr(uid).execute()]
+            c = [tr.set(uid, 1).expire(uid, 300).execute()]
         c.append(self._db2.incr(uid))
         await asyncio.wait(c)
 
