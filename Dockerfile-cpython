@@ -9,14 +9,15 @@ RUN zypper ar -f https://download.opensuse.org/repositories/home:/flacco:/rtk:/p
  gcc-c++\
  tar\
  bzip2\
- python39 &&\
+ python39\
+ python39-devel &&\
  curl https://bootstrap.pypa.io/get-pip.py | python3.9 &&\
  ln -s /usr/lib64/gcc/x86_64-suse-linux/7/cc1plus /usr/bin/cc1plus &&\
  groupadd -g 2000 app &&\
  useradd -u 2000 -m app -g app &&\
  chown -R app:app /home/app &&\
  su app -c 'python3.9 -m pip install --user --no-warn-script-location -r /home/app/requirements.txt' &&\
- zypper -n rm --clean-deps curl tar gcc-c++ bzip2 &&\
+ zypper -n rm --clean-deps curl tar gcc-c++ bzip2 python39-devel &&\
  zypper -n clean
 USER app
 WORKDIR /home/app
