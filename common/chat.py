@@ -54,3 +54,14 @@ class Chat:
             lim = configured_limit
             await self._db.set(key, lim, expire=3600)
         return lim
+
+    async def toggle_messages_store_state(self, chat: str) -> bool:
+        if await self._db.sismember('mstore', chat):
+            await self._db.srem('mstore', chat)
+            return False
+        else:
+            await self._db.sadd('mstore', chat)
+            return True
+
+    async def get_storing_chats(self) -> List[str]:
+        return await self._db.smembers('mstore')

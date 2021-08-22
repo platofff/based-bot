@@ -19,10 +19,7 @@ class OnlineDetect:
 
     async def update_uid(self, uid: int) -> None:
         uid = str(uid)
-        async with self._db.pipeline(transaction=True) as tr:
-            c = [tr.set(uid, 1).expire(uid, 300).execute()]
-        c.append(self._db2.incr(uid))
-        await asyncio.wait(c)
+        await asyncio.wait([self._db.set(uid, 1, expire=300), self._db2.incr(uid)])
 
     async def get_online(self) -> List[int]:
         return [int(x) for x in await self._db.keys('*')]

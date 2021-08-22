@@ -349,18 +349,31 @@ async def objection_conf_handler(message: Message):
         await message.answer('Прикрепи .objection файл с objection.lol/maker')
 
 
+async def is_admin(_id: int, peer: int):
+    if _id < 0:
+        return False
+    members = (await bot.api.messages.get_conversation_members(peer)).items
+    for member in members:
+        if member.member_id == _id and member.is_admin:
+            return True
+    return False
+
+
 @bot.on.chat_message(text=['/чат лимит <command> <limit>', '/chat limit <command> <limit>'])
 async def chat_limit_handler(message: Message, command: str, limit: str):
-    members = (await bot.api.messages.get_conversation_members(message.peer_id)).items
-    is_admin = False
-    for member in members:
-        if member.member_id == message.from_id and member.is_admin:
-            is_admin = True
-            break
-    if not is_admin or message.from_id < 0:
-        await message.answer('Ты не админ.')
-        return
+    if not await is_admin(message.from_id, message.peer_id):
+        return await message.answer('Ты не админ')
     await message.answer(await chat.set_limit(f'vk{message.chat_id}', command, limit))
+
+
+@bot.on.chat_message(text=['/чат база', '/chat base'])
+async def chat_base_handler(message: Message):
+    if not await is_admin(message.from_id, message.peer_id):
+        return await message.answer('Ты не админ')
+    if await chat.toggle_messages_store_state(f'vk{message.chat_id}'):
+        await message.answer('Команда "/база" включена в этой беседе. История чата будет обезличенно сохраняться.')
+    else:
+        await message.answer('Команда "/база" отключена в этой беседе. История чата стёрта из базы данных.')
 
 
 async def main():
