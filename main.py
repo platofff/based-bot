@@ -32,6 +32,7 @@ from common.ratelimit import RateLimit
 from common.ldpr import Zhirinovsky
 from vk_specific.firebasestats import FirebaseStatsThread
 from vk_specific.freespeak import Freespeak
+from vk_specific.friday import Friday
 from vk_specific.onlinedetect import OnlineDetect
 
 log_level = logging.DEBUG if getenv('DEBUG') else logging.INFO
@@ -85,7 +86,8 @@ commands = {'start': ['/начать', '/start', '/команды', '/commands',
             'objection_conf': ['/обжекшонконф', '/objectionconf'],
             'zhirinovskysuggested': ['/жириновский', '/жирик', '/zhirinovsky',
                                      '/жириновский <_>', '/жирик <_>', '/zhirinovsky <_>'],
-            'freespeak': ['/freespeak <_>', '/фриспик <_>']}
+            'freespeak': ['/freespeak <_>', '/фриспик <_>'],
+            'friday': ['/friday', '/пятница']}
 
 
 @bot.on.message(text=commands['start'])
@@ -100,6 +102,7 @@ async def start_handler(message: Message):
                          '/objection; /objectionconf - Генерация суда в Ace Attorney из пересланных сообщений. Как '
                          'пользоваться тут: https://vk.com/@kallinux-objection\n'
                          '/жирик - Заставить Жириновского что-то предложить\n'
+                         '/пятница - Сколько осталось до ПЯТНИЦЫ'
                          'Для админов бесед:\n'
                          '/чат лимит <команда> <количество вызовов в час на человека>\n'
                          'Например: "/чат лимит /демотиватор 5" сделает команду /демотиватор в беседе доступной 5 раз '
@@ -283,6 +286,16 @@ async def optimization_handler(message: Message, text: Optional[str] = None):
             await message.answer('Слишком длинное выражение')
         else:
             raise e
+
+
+@bot.on.message(text=commands['friday'])
+@command_limit('friday')
+async def friday_handler(message: Message):
+    res = Friday.get()
+    if res.startswith('photo'):
+        await message.answer(attachment=res)
+    else:
+        await message.answer(res)
 
 
 @bot.on.message(text=commands['objection'])
