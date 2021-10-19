@@ -13,7 +13,7 @@ RUN zypper ar -f https://download.opensuse.org/repositories/home:/flacco:/rtk:/p
  timezone &&\
  ln -s /usr/lib64/gcc/x86_64-suse-linux/7/cc1plus /usr/bin/cc1plus &&\
  sh -c 'curl https://downloads.python.org/pypy/pypy3.7-v7.3.6-linux64.tar.bz2 | tar xjf - -C /tmp' &&\
- mv /tmp/pypy3.7-v7.3.5-linux64 /opt/pypy &&\
+ mv /tmp/pypy3.7-v7.3.6-linux64 /opt/pypy &&\
  /opt/pypy/bin/pypy3 -m ensurepip &&\
  /opt/pypy/bin/pypy3 -m pip install -U pip wheel &&\
  groupadd -g 2000 app &&\
