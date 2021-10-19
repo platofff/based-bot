@@ -8,6 +8,8 @@ services:
     volumes:
     - ${FIREBASE_KEY_PATH:-/dev/null}:/firebase-adminsdk.json:ro
     environment:
+      PYPY_GC_MAX: 4GB
+      PYPY_GC_MIN: 2GB
       REDIS_URI: unix:///tmp/redis.sock
       LANG: en_US.UTF-8
       LC_ALL: en_US.UTF-8
