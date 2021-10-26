@@ -132,4 +132,4 @@ dmypy.json
 .idea/
 checklist.txt
 
-freespeak.json
+predefined_conversations/*

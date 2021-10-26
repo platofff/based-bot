@@ -22,7 +22,7 @@ class Freespeak:
     _keywords_db: aioredis.Redis
     _loop: asyncio.AbstractEventLoop
     _morph: pymorphy2.MorphAnalyzer
-    _valid_grammemes = ['NOUN', 'ADVB', 'ADJF' 'NPRO', 'INFN', 'NUMR', 'INTJ', 'CONJ']
+    _invalid_grammemes = ['INTJ', 'PRCL', 'PREP']
 
     async def _get_keywords(self, text: str) -> List[pymorphy2.analyzer.Parse]:
         return [self._morph.parse(y)[0] for y in
@@ -50,7 +50,7 @@ class Freespeak:
                         all_keywords = await self._get_keywords(initial[_id]['text'])
 
                         for kw in all_keywords:
-                            if any(x in list(kw.tag.grammemes) for x in self._valid_grammemes):
+                            if list(kw.tag.grammemes)[0] not in self._invalid_grammemes:
                                 ktr = ktr.sadd(kw.word, _id)
 
                     await asyncio.wait([mtr.execute(), ktr.execute()])
@@ -125,7 +125,7 @@ class Freespeak:
                         .hset(mi, 'answers', '') \
                         .zadd('m', {f'm:{i}': int(_id)})
                     for kw in all_keywords:
-                        if any(x in list(kw.tag.grammemes) for x in self._valid_grammemes):
+                        if list(kw.tag.grammemes)[0] not in self._invalid_grammemes:
                             ktr = ktr.sadd(kw.word, _id)
                     await asyncio.wait([mtr.execute(), ktr.execute()])
 

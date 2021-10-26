@@ -12,6 +12,7 @@ import logging
 import random
 from typing import Optional, Tuple, List, Union
 import re
+from multiprocessing import cpu_count
 
 import typing
 from vkbottle import Bot, DocMessagesUploader
@@ -20,6 +21,7 @@ from vkbottle.tools.dev_tools.uploader import PhotoMessageUploader
 from vkbottle_types.objects import MessagesMessageAttachmentType, PhotosPhotoSizesType, MessagesForeignMessage, \
     MessagesMessage, MessagesMessageAttachment
 
+from common.bitcoinprice import BitcoinPrice
 from common.chat import Chat
 from common.demotivator import Demotivator
 from common.nouveau import Nouveau
@@ -30,10 +32,8 @@ from common.tagsformatter import TagsFormatter
 from common.vasyacache import Vasya
 from common.ratelimit import RateLimit
 from common.ldpr import Zhirinovsky
-from vk_specific.firebasestats import FirebaseStatsThread
-from vk_specific.freespeak import Freespeak
+from vk_specific.base import Base
 from vk_specific.friday import Friday
-from vk_specific.onlinedetect import OnlineDetect
 
 log_level = logging.DEBUG if getenv('DEBUG') else logging.INFO
 logging.basicConfig(level=log_level)
@@ -43,17 +43,15 @@ bot = Bot(getenv('VK_BOT_TOKEN'))
 redis_uri = getenv('REDIS_URI')
 photo_uploader = PhotoMessageUploader(bot.api, generate_attachment_strings=True)
 docs_uploader = DocMessagesUploader(bot.api, generate_attachment_strings=True)
-pool = ProcessPoolExecutor(max_workers=4)
+pool = ProcessPoolExecutor(max_workers=cpu_count() // 2)
 demotivator = Demotivator()
 img_search = ImgSearch()
 rate_limit = RateLimit(5)
 objection: Objection
 vasya_caching: Vasya
 chat: Chat
-stats: FirebaseStatsThread
-online_detect: OnlineDetect
-online_detect_handler: typing.Callable[[Message], None]
-freespeak: Freespeak
+base: Base
+bitcoin_price: BitcoinPrice
 
 
 def excepthook(exctype, value, tb):
@@ -74,23 +72,32 @@ def command_limit(command: str):
     return decorator
 
 
-def get_arguments(text: str):
+def get_arguments(text: str) -> str:
     return re.sub(r'^[\S]*\s?', '', text, 1)
 
 
+class CommandRule(rules.ABCMessageRule):
+    def __init__(self, command: List[str]):
+        rules.ABCMessageRule.__init__(self)
+        self._command = command
+
+    async def check(self, message: Message) -> bool:
+        return any(message.text.lower().startswith(x) for x in self._command)
+
+
 commands = {'start': ['/начать', '/start', '/команды', '/commands', '/помощь', '/help'],
-            'demotivator': ['/демотиватор', '/demotivator', '/демотиватор <_>', '/demotivator <_>'],
-            'nouveau': ['/nouveau', '/нуво', '/ноувеау', '/nouveau <text>', '/нуво <text>', '/ноувеау <text>'],
-            'optimization': ['/оптимизация', '/optimization', '/оптимизация <text>', '/optimization <text>'],
+            'demotivator': ['/демотиватор', '/demotivator'],
+            'nouveau': ['/nouveau', '/нуво', '/ноувеау'],
+            'optimization': ['/оптимизация', '/optimization'],
             'objection': ['/обжекшон', '/objection'],
             'objection_conf': ['/обжекшонконф', '/objectionconf'],
-            'zhirinovskysuggested': ['/жириновский', '/жирик', '/zhirinovsky',
-                                     '/жириновский <_>', '/жирик <_>', '/zhirinovsky <_>'],
-            'freespeak': ['/freespeak <_>', '/фриспик <_>'],
-            'friday': ['/friday', '/пятница']}
+            'zhirinovskysuggested': ['/жириновский', '/жирик', '/zhirinovsky'],
+            'friday': ['/friday', '/пятница'],
+            'base': ['/base', '/база'],
+            'btc': ['/btc', '/бтц', '/bitcoin', '/биткоин', '/тюльпаны']}
 
 
-@bot.on.message(text=commands['start'])
+@bot.on.message(CommandRule(commands['start']))
 @command_limit('start')
 async def start_handler(message: Message):
     await message.answer('Команды:\n'
@@ -124,7 +131,7 @@ async def get_photo_url(message: Union[Message, MessagesForeignMessage], _all=Fa
         return url
 
     if _all:
-        return list(await asyncio.gather(*[process(a) for a in message.attachments[:10] if 'photo' in dir(a)]))
+        return list(await asyncio.gather(*[process(a) for a in message.attachments if 'photo' in dir(a)]))
     return await process(message.attachments[0])
 
 
@@ -198,9 +205,9 @@ def photo_callback(message: Message, _fut: concurrent.futures.Future, _list: boo
     asyncio.ensure_future(_callback(_fut.result()), loop=bot.loop)
 
 
-@bot.on.message(text=commands['demotivator'])
+@bot.on.message(CommandRule(commands['demotivator']))
 @command_limit('demotivator')
-async def demotivator_handler(message: Message, _: Optional[str] = None):
+async def demotivator_handler(message: Message):
     r = await rate_limit.ratecounter(f'vk{message.from_id}')
     if type(r) != bool:
         await message.answer(r)
@@ -228,9 +235,9 @@ async def demotivator_handler(message: Message, _: Optional[str] = None):
         fut.add_done_callback(functools.partial(photo_callback, message))
 
 
-@bot.on.message(text=commands['nouveau'])
+@bot.on.message(CommandRule(commands['nouveau']))
 @command_limit('nouveau')
-async def nouveau_handler(message: Message, text: Optional[str] = None):
+async def nouveau_handler(message: Message):
     if not message.attachments:
         _, photos, _ = await unpack_fwd(message, photos_max=10)
         try:
@@ -240,9 +247,8 @@ async def nouveau_handler(message: Message, text: Optional[str] = None):
             return
     else:
         photos = await get_photo_url(message, True)
-
     try:
-        q = int(text)
+        q = int(get_arguments(message.text))
         if not 1 <= q <= 100:
             raise ValueError
     except ValueError:
@@ -257,9 +263,9 @@ async def nouveau_handler(message: Message, text: Optional[str] = None):
     fut.add_done_callback(functools.partial(photo_callback, message, _list=True))
 
 
-@bot.on.message(text=commands['zhirinovskysuggested'])
+@bot.on.message(CommandRule(commands['zhirinovskysuggested']))
 @command_limit('zhirinovskysuggested')
-async def zhirinovsky_suggested_handler(message: Message, _: Optional[str] = None):
+async def zhirinovsky_suggested_handler(message: Message):
     text = get_arguments(message.text)
     fwd, _, _ = await unpack_fwd(message)
     fwd = '\n'.join([*fwd.values()])
@@ -276,11 +282,11 @@ async def zhirinovsky_suggested_handler(message: Message, _: Optional[str] = Non
     fut.add_done_callback(functools.partial(photo_callback, message))
 
 
-@bot.on.message(text=commands['optimization'])
+@bot.on.message(CommandRule(commands['optimization']))
 @command_limit('optimization')
-async def optimization_handler(message: Message, text: Optional[str] = None):
+async def optimization_handler(message: Message):
     try:
-        await message.answer(bash_encode(text))
+        await message.answer(bash_encode(get_arguments(message.text)))
     except Exception as e:
         if e.args == (914, 'Message is too long'):
             await message.answer('Слишком длинное выражение')
@@ -288,7 +294,7 @@ async def optimization_handler(message: Message, text: Optional[str] = None):
             raise e
 
 
-@bot.on.message(text=commands['friday'])
+@bot.on.message(CommandRule(commands['friday']))
 @command_limit('friday')
 async def friday_handler(message: Message):
     res = Friday.get()
@@ -298,7 +304,7 @@ async def friday_handler(message: Message):
         await message.answer(res)
 
 
-@bot.on.message(text=commands['objection'])
+@bot.on.message(CommandRule(commands['objection']))
 @command_limit('objection')
 async def objection_handler(message: Message):
     if message.is_cropped:
@@ -350,7 +356,7 @@ async def objection_handler(message: Message):
         await message.answer(result)
 
 
-@bot.on.message(text=commands['objection_conf'])
+@bot.on.message(CommandRule(commands['objection_conf']))
 @command_limit('objection_conf')
 async def objection_conf_handler(message: Message):
     try:
@@ -383,60 +389,50 @@ async def chat_limit_handler(message: Message, command: str, limit: str):
 async def chat_base_handler(message: Message):
     if not await is_admin(message.from_id, message.peer_id):
         return await message.answer('Ты не админ')
-    if await chat.toggle_messages_store_state(f'vk{message.chat_id}'):
+    if await chat.toggle_messages_store_state(message.peer_id):
         await message.answer('Команда "/база" включена в этой беседе. История чата будет обезличенно сохраняться.')
     else:
         await message.answer('Команда "/база" отключена в этой беседе. История чата стёрта из базы данных.')
 
 
+@bot.on.chat_message(CommandRule(commands['btc']))
+@command_limit('btc')
+async def btcprice_handler(message: Message):
+    await message.answer(await bitcoin_price.get_price())
+
+
+@bot.on.chat_message(CommandRule(commands['base']))
+@command_limit('base')
+async def base_handler(message: Message):
+    if not await chat.is_storing(message.peer_id):
+        await message.answer('Команда /база не включена администратором беседы! Чтобы включить введите /чат база')
+        return
+    args = get_arguments(message.text)
+    if not args:
+        await message.answer('Использование: /база <текст>')
+        return
+
+    async def callback(text: str) -> None:
+        await message.answer(text)
+
+    base.get_answer(message.text, message.peer_id, callback)
+
+
+@bot.on.chat_message(blocking=False)
+async def base_add_handler(message: Message):
+    if message.from_id < 0 or message.text[0] in ('/', '!') or not await chat.is_storing(message.peer_id):
+        return
+    asyncio.create_task(base.add_message(message))
+
+
 async def main():
-    global objection, vasya_caching, chat, stats, online_detect, online_detect_handler, freespeak
+    global objection, vasya_caching, chat, base, bitcoin_price
     objection = await Objection.new(redis_uri)
     vasya_caching = await Vasya.new(demotivator, img_search, pool, redis_uri)
     chat = await Chat.new(redis_uri, commands)
+    base = await Base.new(redis_uri)
+    bitcoin_price = BitcoinPrice(chat.db)
     bot.loop.create_task(vasya_caching.run())
-    if getenv('STATS'):
-        online_detect = await OnlineDetect.new(redis_uri)
-
-        @bot.on.chat_message(rules.FromPeerRule(online_detect.peer))
-        async def online_detect_handler(message: Message):
-            await online_detect.update_uid(message.from_id)
-
-        def firebase_restart(exception: BaseException):
-            global stats
-            logging.debug(f'''Thread {stats} raised exception: {exception}
-Traceback:
-{traceback.format_tb(exception.__traceback__)}''')
-            stats.stop()
-            stats = FirebaseStatsThread(bot, online_detect, firebase_restart)
-            stats.start()
-
-        stats = FirebaseStatsThread(bot, online_detect, firebase_restart)
-        stats.start()
-
-    answers = getenv('ANSWERS_CHAT')
-    if answers:
-        answers = int(answers) + 2000000000
-        freespeak = await Freespeak.new(redis_uri, bot.loop)
-
-        @bot.on.message(rules.FromPeerRule(answers), text=commands['freespeak'])
-        @command_limit('freespeak')
-        async def freespeak_handler(message: Message, _: str):
-            async def callback(answer: str):
-                await message.answer(answer)
-            arguments = get_arguments(message.text)
-            if not arguments:
-                await message.answer('Вопрос фриспику: /фриспик <вопрос>')
-                return
-
-            freespeak.get_answer(arguments, callback)
-
-        @bot.on.message(rules.FromPeerRule(answers))
-        async def freespeak_db_handler(message: Message):
-            if not message.text or message.text.startswith('/'):
-                return
-            freespeak.add_message(message)
-
 
 if __name__ == '__main__':
     bot.loop_wrapper.add_task(main())

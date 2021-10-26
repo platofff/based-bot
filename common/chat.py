@@ -4,13 +4,13 @@ import aioredis
 
 
 class Chat:
-    _db: aioredis.Redis
+    db: aioredis.Redis
     commands: Dict[str, List[str]]
 
     @staticmethod
     async def new(redis_uri: str, commands: Dict[str, List[str]]):
         self = Chat()
-        self._db = await aioredis.from_url(redis_uri, encoding='utf-8', decode_responses=True, db=3)
+        self.db = await aioredis.from_url(redis_uri, encoding='utf-8', decode_responses=True, db=3)
         self.commands = {}
         for x, y in commands.items():
             for c in y:
@@ -32,36 +32,36 @@ class Chat:
         if not command:
             return 'Нет такой команды!'
         if hour_limit == -1:
-            await self._db.delete(f'{chat}_limit_{command}')
+            await self.db.delete(f'{chat}_limit_{command}')
             return f'Лимит команды {command} для данного чата снят.'
-        await self._db.set(f'{chat}_limit_{command}', hour_limit)
+        await self.db.set(f'{chat}_limit_{command}', hour_limit)
         return f'Лимит команды {command} для данного чата установлен на {hour_limit} вызовов на человека в час. ' \
                f'Чтобы убрать лимит установите -1.'
 
     async def get_limit(self, chat: str, command: str, user: str) -> int:
-        configured_limit = await self._db.get(f'{chat}_limit_{command}')
+        configured_limit = await self.db.get(f'{chat}_limit_{command}')
         if not configured_limit:
             return -1
         configured_limit = int(configured_limit)
         key = f'{chat}_limit_{command}_{user}'
-        user_limit = await self._db.get(key)
+        user_limit = await self.db.get(key)
         if user_limit is not None:
             user_limit = int(user_limit)
             lim = max(0, user_limit - 1)
-            ttl = await self._db.ttl(key)
-            await self._db.set(key, lim, expire=ttl)
+            ttl = await self.db.ttl(key)
+            await self.db.set(key, lim, ex=ttl)
         else:
             lim = configured_limit
-            await self._db.set(key, lim, expire=3600)
+            await self.db.set(key, lim, ex=3600)
         return lim
 
-    async def toggle_messages_store_state(self, chat: str) -> bool:
-        if await self._db.sismember('mstore', chat):
-            await self._db.srem('mstore', chat)
+    async def toggle_messages_store_state(self, chat: int) -> bool:
+        if await self.db.sismember('mstore', chat):
+            await self.db.srem('mstore', chat)
             return False
         else:
-            await self._db.sadd('mstore', chat)
+            await self.db.sadd('mstore', chat)
             return True
 
-    async def get_storing_chats(self) -> List[str]:
-        return await self._db.smembers('mstore')
+    async def is_storing(self, conversation_id: int) -> bool:
+        return await self.db.sismember('mstore', conversation_id)
