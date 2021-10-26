@@ -399,7 +399,7 @@ async def chat_base_handler(message: Message):
         await message.answer('Команда "/база" отключена в этой беседе.')
 
 
-@bot.on.chat_message(CommandRule(commands['btc']))
+@bot.on.message(CommandRule(commands['btc']))
 @command_limit('btc')
 async def btcprice_handler(message: Message):
     await message.answer(await bitcoin_price.get_price())
