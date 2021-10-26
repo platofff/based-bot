@@ -110,6 +110,9 @@ async def start_handler(message: Message):
                          'пользоваться тут: https://vk.com/@kallinux-objection\n'
                          '/жирик - Заставить Жириновского что-то предложить\n'
                          '/пятница - Сколько осталось до ПЯТНИЦЫ\n'
+                         '/база <текст> - ответить на вопрос используя мудрость данной беседы. Политика '
+                         'конфиденциальности: https://vk.com/@kallinux-objection\n'
+                         '/btc - Цена биткоина\n'
                          'Для админов бесед:\n'
                          '/чат лимит <команда> <количество вызовов в час на человека>\n'
                          'Например: "/чат лимит /демотиватор 5" сделает команду /демотиватор в беседе доступной 5 раз '
@@ -390,9 +393,10 @@ async def chat_base_handler(message: Message):
     if not await is_admin(message.from_id, message.peer_id):
         return await message.answer('Ты не админ')
     if await chat.toggle_messages_store_state(message.peer_id):
-        await message.answer('Команда "/база" включена в этой беседе. История чата будет обезличенно сохраняться.')
+        await message.answer('Команда "/база" включена в этой беседе. Политика конфиденциальности: '
+                             'https://vk.com/@kallinux-base')
     else:
-        await message.answer('Команда "/база" отключена в этой беседе. История чата стёрта из базы данных.')
+        await message.answer('Команда "/база" отключена в этой беседе.')
 
 
 @bot.on.chat_message(CommandRule(commands['btc']))
