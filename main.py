@@ -48,6 +48,7 @@ pool = ProcessPoolExecutor(max_workers=cpu_count() // 2)
 demotivator = Demotivator()
 img_search = ImgSearch()
 rate_limit = RateLimit(5)
+btc_price = BitcoinPrice()
 objection: Objection
 vasya_caching: Vasya
 chat: Chat
@@ -419,7 +420,7 @@ async def btcprice_handler(message: Message):
             return await message.answer('Использование: /btc <количество часов, не более 24>')
     else:
         hours = 24
-    fut = pool.submit(BitcoinPrice.get_price, hours)
+    fut = pool.submit(btc_price.get_price, hours)
     fut.add_done_callback(functools.partial(photo_callback, message))
 
 
