@@ -433,7 +433,7 @@ async def base_handler(message: Message):
 
 @bot.on.chat_message(blocking=False)
 async def base_add_handler(message: Message):
-    if message.from_id < 0 or not message.text[0] or message.text[0] in ('/', '!') \
+    if message.from_id < 0 or not message.text or message.text[0] in ('/', '!') \
             or not await chat.is_storing(message.peer_id):
         return
     asyncio.create_task(base.add_message(message))

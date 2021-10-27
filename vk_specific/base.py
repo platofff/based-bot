@@ -72,7 +72,7 @@ class Base:
                         chat = json.loads(await f.read(), object_hook=lambda d: FakeMessage(**d)).chat
                     _id = int(_id) + 2000000000
                     for msg in reversed(chat):
-                        if msg.from_id < 0 or not msg.text[0] or msg.text[0] in ('/', '!'):
+                        if msg.from_id < 0 or not msg.text or msg.text[0] in ('/', '!'):
                             continue
                         msg.peer_id = _id
                         await self.add_message(msg)
