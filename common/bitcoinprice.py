@@ -13,7 +13,7 @@ class BitcoinPrice:
     _lastPrice: bytes = None
 
     @classmethod
-    #@ttl_cache(ttl=900)
+    @ttl_cache(ttl=900)
     def get_price(cls, hours: int) -> bytes:
         resp = json.load(request.urlopen(
             request.Request('https://cex.io/api/price_stats/BTC/USD',
