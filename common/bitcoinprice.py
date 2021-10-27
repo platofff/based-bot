@@ -11,7 +11,6 @@ from pygal import Config
 class BitcoinPrice:
     @staticmethod
     def get_price(hours: int) -> bytes:
-        print('not cached')
         resp = json.load(request.urlopen(
             request.Request('https://cex.io/api/price_stats/BTC/USD',
                             data=json.dumps({'lastHours': hours, 'maxRespArrSize': hours * 4}).encode('ascii'),
