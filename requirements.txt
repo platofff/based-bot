@@ -5,3 +5,4 @@ cachetools>=4.2.4,<5.0
 aioredis>=2.0.0,<3.0
 pymorphy2[fast]>=0.9.1,<1.0
 pygal>=2.4.0,<3.0
+cairosvg>=2.5.2,<3.0
