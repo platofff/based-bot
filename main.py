@@ -52,7 +52,6 @@ objection: Objection
 vasya_caching: Vasya
 chat: Chat
 base: Base
-bitcoin_price: BitcoinPrice
 
 
 def excepthook(exctype, value, tb):
@@ -411,7 +410,17 @@ async def chat_base_handler(message: Message):
 @bot.on.message(CommandRule(commands['btc']))
 @command_limit('btc')
 async def btcprice_handler(message: Message):
-    await message.answer(await bitcoin_price.get_price())
+    hours = get_arguments(message.text)
+    if hours:
+        try:
+            hours = int(hours)
+            assert 0 < hours <= 24
+        except (ValueError, AssertionError):
+            return await message.answer('Использование: /btc <количество часов, не более 24>')
+    else:
+        hours = 24
+    fut = pool.submit(BitcoinPrice.get_price, hours)
+    fut.add_done_callback(functools.partial(photo_callback, message))
 
 
 @bot.on.chat_message(CommandRule(commands['base']))
@@ -450,15 +459,14 @@ async def redis_stats_handler(message: Message):
 
 
 async def main():
-    global objection, vasya_caching, chat, base, bitcoin_price
+    global objection, vasya_caching, chat, base
     objection = await Objection.new(redis_uri)
     vasya_caching = await Vasya.new(demotivator, img_search, pool, redis_uri)
     chat = await Chat.new(redis_uri, commands)
     base = await Base.new(redis_uri)
-    bitcoin_price = BitcoinPrice(chat.db)
     bot.loop.create_task(vasya_caching.run())
 
 
 if __name__ == '__main__':
-    bot.loop_wrapper.add_task(main())
+    bot.loop_wrapper.on_startup.append(main())
     bot.run_forever()
