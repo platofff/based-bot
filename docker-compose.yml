@@ -17,6 +17,7 @@ services:
       DEBUG: ${DEBUG}
       CONVERSATION_MAX_SIZE: ${CONVERSATION_MAX_SIZE}
       UNLIMITED_CONVERSATIONS: ${UNLIMITED_CONVERSATIONS}
+      ADMIN: ${ADMIN}
     depends_on:
       - redis
   redis:

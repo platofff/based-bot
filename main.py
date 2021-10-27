@@ -41,6 +41,7 @@ logger = logging.getLogger('MAIN')
 
 bot = Bot(getenv('VK_BOT_TOKEN'))
 redis_uri = getenv('REDIS_URI')
+admin = int(getenv('ADMIN'))
 photo_uploader = PhotoMessageUploader(bot.api, generate_attachment_strings=True)
 docs_uploader = DocMessagesUploader(bot.api, generate_attachment_strings=True)
 pool = ProcessPoolExecutor(max_workers=cpu_count() // 2)
@@ -83,6 +84,14 @@ class CommandRule(rules.ABCMessageRule):
 
     async def check(self, message: Message) -> bool:
         return any(message.text.lower().startswith(x) for x in self._command)
+
+
+class FromAdminRule(rules.ABCMessageRule):
+    def __init__(self):
+        rules.ABCMessageRule.__init__(self)
+
+    async def check(self, message: Message) -> bool:
+        return message.from_id == admin
 
 
 commands = {'start': ['/начать', '/start', '/команды', '/commands', '/помощь', '/help'],
@@ -424,9 +433,20 @@ async def base_handler(message: Message):
 
 @bot.on.chat_message(blocking=False)
 async def base_add_handler(message: Message):
-    if message.from_id < 0 or message.text[0] in ('/', '!') or not await chat.is_storing(message.peer_id):
+    if message.from_id < 0 or not message.text[0] or message.text[0] in ('/', '!') \
+            or not await chat.is_storing(message.peer_id):
         return
     asyncio.create_task(base.add_message(message))
+
+
+@bot.on.message(FromAdminRule(), text='/redis')
+async def redis_stats_handler(message: Message):
+    stats = await chat.db.info(section='Memory')
+    memory_usage = '\n'.join([f'- {k}: {v["keys"]}' for k, v in (await chat.db.info(section='Keyspace')).items()])
+    await message.answer(f'Выделено памяти: {stats["used_memory_human"]}\n'
+                         f'Пиковое потребление памяти: {stats["used_memory_peak_human"]}\n'
+                         f'Количество ключей:\n'
+                         f'{memory_usage}')
 
 
 async def main():
@@ -437,6 +457,7 @@ async def main():
     base = await Base.new(redis_uri)
     bitcoin_price = BitcoinPrice(chat.db)
     bot.loop.create_task(vasya_caching.run())
+
 
 if __name__ == '__main__':
     bot.loop_wrapper.add_task(main())

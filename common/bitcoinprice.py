@@ -16,6 +16,7 @@ class BitcoinPrice:
                     for entry in await resp.json(content_type='text/html'):
                         if entry['currency'] == 'USD' and entry['symbol'] == 'cexUSD':
                             price = entry['avg']
+                            break
             await self.db.set('btcprice', 1, ex=900)
             self._lastPrice = f'На CEX биткоин стоит {int(price // 1)} USD'
         return self._lastPrice
