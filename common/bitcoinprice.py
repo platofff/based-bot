@@ -27,6 +27,11 @@ class BitcoinPrice:
             time = datetime.fromtimestamp(entry['tmsp'])
             if time.hour == 0 and time.day not in marked_days:
                 marked_days.append(time.day)
+                for j in range(-3, 0):
+                    try:
+                        labels[j] = ''
+                    except IndexError:
+                        pass
                 labels.append(time.strftime('%B, %d'))
             elif i % 6 == 0 and not any(labels[-3:]):
                 labels.append(time.strftime('%H:%M'))
