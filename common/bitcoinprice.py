@@ -9,8 +9,8 @@ from pygal import Config
 
 
 class BitcoinPrice:
-    @staticmethod
-    def get_price(hours: int) -> bytes:
+    @classmethod
+    def get_price(cls, hours: int) -> bytes:
         resp = json.load(request.urlopen(
             request.Request('https://cex.io/api/price_stats/BTC/USD',
                             data=json.dumps({'lastHours': hours, 'maxRespArrSize': hours * 4}).encode('ascii'),
@@ -24,17 +24,12 @@ class BitcoinPrice:
         marked_days = []
         labels = []
         for i, entry in enumerate(resp):
-            _time = datetime.fromtimestamp(entry['tmsp'])
-            if _time.hour == 0 and _time.day not in marked_days:
-                marked_days.append(_time.day)
-                for j in range(-3, 0):
-                    try:
-                        labels[j] = ''
-                    except IndexError:
-                        pass
-                labels.append(_time.strftime('%B, %d'))
+            time = datetime.fromtimestamp(entry['tmsp'])
+            if time.hour == 0 and time.day not in marked_days:
+                marked_days.append(time.day)
+                labels.append(time.strftime('%B, %d'))
             elif i % 6 == 0 and not any(labels[-3:]):
-                labels.append(_time.strftime('%H:%M'))
+                labels.append(time.strftime('%H:%M'))
             else:
                 labels.append('')
         chart.x_labels = labels

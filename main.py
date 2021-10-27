@@ -205,20 +205,16 @@ def create_demotivator(args: list, url: Optional[str] = None) -> bytes:
                 search_results, url = kernel_panic()
 
 
-def photo_callback(message: Message, _fut: concurrent.futures.Future, _list: bool = False,
-                   res_callback: Union[None, typing.Callable[[str], None]] = None):
+
+def photo_callback(message: Message, _fut: concurrent.futures.Future, _list: bool = False, res_callback = None):
     async def _callback(result: Union[bytes, List[bytes]]):
-        try:
-            if _list:
-                attachment = ','.join(await asyncio.gather(*[photo_uploader.upload(r) for r in result]))
-            else:
-                attachment = await photo_uploader.upload(result)
-            await message.answer(attachment=attachment)
-            if res_callback is not None:
-                res_callback(attachment)
-        except BaseException as e:
-            print(e)
-            e.__traceback__.print_tb()
+        if _list:
+            attachment = ','.join(await asyncio.gather(*[photo_uploader.upload(r) for r in result]))
+        else:
+            attachment = await photo_uploader.upload(result)
+        await message.answer(attachment=attachment)
+        if res_callback is not None:
+            await res_callback(attachment)
 
     asyncio.ensure_future(_callback(_fut.result()), loop=bot.loop)
 
@@ -417,9 +413,8 @@ async def chat_base_handler(message: Message):
 @bot.on.message(CommandRule(commands['btc']))
 @command_limit('btc')
 async def btcprice_handler(message: Message):
-    def cache_handler(_res: str):
-        asyncio.ensure_future(chat.db.set(f'btc{hours}', _res, ex=900), loop=bot.loop)
-
+    async def cache_handler(attachment: str):
+        await chat.db.set(f'btc{hours}', attachment, ex=900)
     hours = get_arguments(message.text)
     if hours:
         try:
