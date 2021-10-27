@@ -1,19 +1,14 @@
-import io
 import json
 from urllib import request
 from datetime import datetime
 
 import pygal
-from cachetools.func import ttl_cache
 import cairosvg
 from pygal import Config
 
 
 class BitcoinPrice:
-    _lastPrice: bytes = None
-
     @classmethod
-    @ttl_cache(ttl=900)
     def get_price(cls, hours: int) -> bytes:
         resp = json.load(request.urlopen(
             request.Request('https://cex.io/api/price_stats/BTC/USD',
@@ -31,7 +26,7 @@ class BitcoinPrice:
             time = datetime.fromtimestamp(entry['tmsp'])
             if time.hour == 0 and time.day not in marked_days:
                 marked_days.append(time.day)
-                labels.append(time.strftime('%B, %m'))
+                labels.append(time.strftime('%B, %d'))
             elif i % 6 == 0 and not any(labels[-3:]):
                 labels.append(time.strftime('%H:%M'))
             else:
