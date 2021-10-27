@@ -48,7 +48,6 @@ pool = ProcessPoolExecutor(max_workers=cpu_count() // 2)
 demotivator = Demotivator()
 img_search = ImgSearch()
 rate_limit = RateLimit(5)
-btc_price = BitcoinPrice()
 objection: Objection
 vasya_caching: Vasya
 chat: Chat
@@ -206,13 +205,15 @@ def create_demotivator(args: list, url: Optional[str] = None) -> bytes:
                 search_results, url = kernel_panic()
 
 
-def photo_callback(message: Message, _fut: concurrent.futures.Future, _list: bool = False):
+def photo_callback(message: Message, _fut: concurrent.futures.Future, _list: bool = False, res_callback=None):
     async def _callback(result: Union[bytes, List[bytes]]):
         if _list:
             attachment = ','.join(await asyncio.gather(*[photo_uploader.upload(r) for r in result]))
         else:
             attachment = await photo_uploader.upload(result)
         await message.answer(attachment=attachment)
+        if res_callback:
+            res_callback(attachment)
 
     asyncio.ensure_future(_callback(_fut.result()), loop=bot.loop)
 
@@ -411,6 +412,9 @@ async def chat_base_handler(message: Message):
 @bot.on.message(CommandRule(commands['btc']))
 @command_limit('btc')
 async def btcprice_handler(message: Message):
+    def cache_handler(_res: str):
+        asyncio.ensure_future(chat.db.set(f'btc{hours}', _res, ex=900), loop=bot.loop)
+
     hours = get_arguments(message.text)
     if hours:
         try:
@@ -420,8 +424,12 @@ async def btcprice_handler(message: Message):
             return await message.answer('Использование: /btc <количество часов, не более 24>')
     else:
         hours = 24
-    fut = pool.submit(btc_price.get_price, hours)
-    fut.add_done_callback(functools.partial(photo_callback, message))
+    res = await chat.db.get(f'btc{hours}')
+    if res is None:
+        fut = pool.submit(BitcoinPrice.get_price, hours)
+        fut.add_done_callback(functools.partial(photo_callback, message, res_callback=cache_handler))
+    else:
+        await message.answer(attachment=res)
 
 
 @bot.on.chat_message(CommandRule(commands['base']))
