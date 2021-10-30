@@ -26,7 +26,7 @@ local process = function ()
         for answer in string.gmatch(msg[2], "%S+") do
             table.insert(answers, answer)
         end
-        return msg[1] .. "\n" .. redis.call("hget", "text", KEYS[1] .. ":" .. answers[math.random(#answers)])
+        return msg[1] .. "\n" .. redis.call("hget", KEYS[1] .. ":" .. answers[math.random(#answers)], "text")
     end
 end
 return process()
