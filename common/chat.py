@@ -65,3 +65,18 @@ class Chat:
 
     async def is_storing(self, conversation_id: int) -> bool:
         return await self.db.sismember('mstore', conversation_id)
+
+    async def rate_limit(self, user: str, interval: int) -> int:
+        key = f'rl_{user}'
+        ttl = await self.db.pttl(key)
+        if ttl == -2:
+            await self.db.set(key, '0', px=interval)
+            return 0
+        else:
+            ttl += interval
+            val = await self.db.get(key)
+            if val == '1':
+                await self.db.pexpire(key, ttl)
+                return -1
+            await self.db.set(key, '1', px=ttl)
+            return ttl

@@ -34,6 +34,7 @@ class Base:
     _morph: pymorphy2.MorphAnalyzer
     _keywords_search: str
     _daily_cleanup: str
+    _random_pair: str
     _invalid_grammemes = ['INTJ', 'PRCL', 'PREP']
     _unlimited_conversations: List[str]
     _LIMIT: str
@@ -54,6 +55,8 @@ class Base:
             self._keywords_search = await self._keywords_db.script_load(await f.read())
         async with aiofiles.open('redis_scripts/daily_cleanup.lua', mode='r') as f:
             self._daily_cleanup = await self._messages_db.script_load(await f.read())
+        async with aiofiles.open('redis_scripts/random_pair.lua', mode='r') as f:
+            self._random_pair = await self._messages_db.script_load(await f.read())
         self._LIMIT = getenv('CONVERSATION_MAX_SIZE') or "8388608"  # 8 MB
         self._unlimited_conversations = getenv('UNLIMITED_CONVERSATIONS')
         if self._unlimited_conversations:
@@ -180,3 +183,9 @@ class Base:
             if now.hour >= 4:
                 target += 86400
             await asyncio.sleep(target - now.timestamp())
+
+    async def random_pair(self, conversation: int) -> Union[None, str]:
+        conversation = str(conversation - 2000000000)
+        if not await self._messages_db.exists(conversation):
+            return None
+        return await self._messages_db.evalsha(self._random_pair, 1, conversation)

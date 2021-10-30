@@ -8,13 +8,10 @@ from typing import List, Dict, Union
 import aiohttp
 import aioredis
 
-from common.ratelimit import RateLimit
-
 
 class Objection:
     http: aiohttp.ClientSession
     _usage: str
-    _rateLimit: RateLimit
     _db: aioredis.Redis
     _jsonPattern: Dict[str, Union[int, bool, str]]
 
@@ -35,15 +32,11 @@ class Objection:
         }
         self._usage = 'Использование только с пересланными сообщениями.'
         self._db = await aioredis.from_url(redis_uri, encoding='utf-8', decode_responses=True, db=2)
-        self._rateLimit = RateLimit(60)
         self.http = aiohttp.ClientSession()
         return self
 
     async def create(self, messages: List[List[Union[str, List[Union[str, Dict[str, Union[str, bool]]]]]]],
                      user_id: str) -> Union[bytes, str]:
-        r = await self._rateLimit.ratecounter(user_id)
-        if type(r) != bool:
-            return r
         result = []
 
         async with self._db.pipeline(transaction=True) as tr:

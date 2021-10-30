@@ -32,8 +32,8 @@ class Demotivator:
         return dem
 
     def create(self, url: str, text1: str, text2: list) -> Union[bytes, None]:
-        text1 = re.sub(r'[<,>]', '', text1)
-        text2 = [re.sub(r'[<,>]', '', s) for s in text2]
+        text1 = re.sub(r'[<>]', '', text1)
+        text2 = [re.sub(r'[<>]', '', s) for s in text2]
         draw = Drawing()
         draw.stroke_color = Color('white')
         try:
