@@ -38,7 +38,7 @@ def create_demotivator(args: list, url: Union[str, None]) -> bytes:
 
 
 @bp.on.message(utils.CommandRule(utils.commands.demotivator))
-@utils.command_limit('demotivator')
+@utils.command_limit('demotivator', 5)
 async def demotivator_handler(message: Message):
     fwd, fwd_photos, _ = await utils.unpack_fwd(message)
     fwd = '\n'.join([*fwd.values()])
