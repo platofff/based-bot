@@ -12,10 +12,10 @@ local process = function ()
         local cur_i = tonumber(string.sub(msg_i, b + 1, e))
         local next_i = KEYS[1] .. ":" .. tostring(cur_i + 1)
         local next = redis.call("hget", next_i, "text")
-        if next == nil then
+        if next == false then
             msg_i = KEYS[1] .. tostring(cur_i - 1)
             msg = redis.call("hmget", msg_i, "text", "answers")
-            if msg[1] == nil then
+            if msg[1] == false then
                 return ""
             end
             return process()
@@ -26,7 +26,8 @@ local process = function ()
         for answer in string.gmatch(msg[2], "%S+") do
             table.insert(answers, answer)
         end
-        return msg[1] .. "\n" .. redis.call("hget", KEYS[1] .. ":" .. answers[math.random(#answers)], "text")
+        local answer = answers[math.random(#answers)]
+        return msg[1] .. "\n" .. redis.call("hget", redis.call("zrange", KEYS[1], answer, answer, "byscore")[1], "text")
     end
 end
 return process()
