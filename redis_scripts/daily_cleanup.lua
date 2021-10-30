@@ -1,5 +1,8 @@
--- 1: max size of messages of an conversation in bytes
--- 2+: ids of unlimited conversations
+--[[
+Аргументы:
+1: максимальный объём в байтах, занимаемый одной беседой в БД
+2+: peer_id бесед без ограничений на объём
+--]]
 local LIMIT = tonumber(KEYS[1])
 local unlimited = {}
 for i = 2, #KEYS do

@@ -1,4 +1,9 @@
--- 1 - conversation id
+--[[
+Аргументы:
+1: id беседы в БД (peer_id - 2000000000)
+Возвращает:
+1: строка, содержащая текст 2 сообщений, второе является ответом на первое. Сообщения разделены символом переноса строки '\n'
+--]]
 local msg_i = redis.call("zrandmember", KEYS[1], -1)[1]
 local msg = redis.call("hmget", msg_i, "text", "answers")
 local process = function ()

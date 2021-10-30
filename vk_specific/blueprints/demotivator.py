@@ -46,13 +46,11 @@ async def demotivator_handler(message: Message):
 
     url = None
     if not text and not fwd:
-        if message.peer_id == message.from_id:
+        if message.peer_id == message.from_id or not await utils.common.chat.is_storing(message.peer_id):
             return await \
                 message.answer('Вызов /демотиватор без текста доступен только в беседах со включённой командой /база!')
         text = await utils.base.random_pair(message.peer_id)
-        if text is None:
-            return await message.answer('Введите "/чат база" чтобы включить /демотиватор без текста в этой беседе!')
-        elif text == '':
+        if text == '':
             return await message.answer('Пока слишком мало сообщений...')
     else:
         if fwd and text:

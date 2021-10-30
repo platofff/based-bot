@@ -184,8 +184,11 @@ class Base:
                 target += 86400
             await asyncio.sleep(target - now.timestamp())
 
-    async def random_pair(self, conversation: int) -> Union[None, str]:
+    async def random_pair(self, conversation: int) -> str:
         conversation = str(conversation - 2000000000)
-        if not await self._messages_db.exists(conversation):
-            return None
         return await self._messages_db.evalsha(self._random_pair, 1, conversation)
+
+    async def random_message(self, conversation: int) -> str:
+        conversation = str(conversation - 2000000000)
+        return await self._messages_db.hget(
+            (await self._messages_db.execute_command('zrandmember', conversation, -1))[0], 'text')

@@ -17,8 +17,7 @@ async def base_handler(message: Message):
     fwd, _, _ = await utils.unpack_fwd(message, 0)
     args += ' '.join(fwd.values())
     if not args:
-        await message.answer('Использование: /база <текст>')
-        return
+        return await message.answer(await utils.base.random_message(message.peer_id))
 
     async def callback(text: str) -> None:
         await message.answer(text)
