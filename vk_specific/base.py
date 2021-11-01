@@ -1,11 +1,12 @@
 import asyncio
 import json
 import logging
+import random
 import re
 from datetime import datetime
 from os import getenv, listdir
 from types import SimpleNamespace
-from typing import Callable, Awaitable, List, Union
+from typing import Callable, Awaitable, List, Union, Optional
 from collections import Counter
 from random import choice, randint
 
@@ -184,9 +185,21 @@ class Base:
                 target += 86400
             await asyncio.sleep(target - now.timestamp())
 
-    async def random_pair(self, conversation: int) -> str:
-        conversation = str(conversation - 2000000000)
-        return await self._messages_db.evalsha(self._random_pair, 1, conversation)
+    async def random_pair(self, conversation_peer: int, _msg1: Optional[Union[None, str]] = None) -> str:
+        conversation = str(conversation_peer - 2000000000)
+        msg1_index = _msg1 or (await self._messages_db.execute_command('zrandmember', conversation, -1))[0]
+        msg1_data = await self._messages_db.hmget(msg1_index, 'text', 'answers')
+        answers = msg1_data[1].split()
+        if answers:
+            i = int(random.choice(answers))
+            msg2_index = (await self._messages_db.zrangebyscore(conversation, i, i))[0]
+            msg2_text = await self._messages_db.hget(msg2_index, 'text')
+        else:
+            msg2_text = await self._messages_db.hget(f'{conversation}:{int(msg1_index.split(":")[1]) + 1}', 'text')
+            if not msg2_text:
+                return await self.random_pair(conversation_peer, f'{conversation}:{int(msg1_index.split(":")[1]) - 1}')
+
+        return f'{msg1_data[0]}\n{msg2_text}'
 
     async def random_message(self, conversation: int) -> str:
         conversation = str(conversation - 2000000000)

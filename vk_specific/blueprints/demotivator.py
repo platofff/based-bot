@@ -49,19 +49,17 @@ async def demotivator_handler(message: Message):
         if message.peer_id == message.from_id or not await utils.common.chat.is_storing(message.peer_id):
             return await \
                 message.answer('Вызов /демотиватор без текста доступен только в беседах со включённой командой /база!')
-        text = await utils.base.random_pair(message.peer_id)
-        if text == '':
-            return await message.answer('Пока слишком мало сообщений...')
+        text = TagsFormatter.format(await utils.base.random_pair(message.peer_id))
     else:
         if fwd and text:
             text += f'\n{fwd}'
         elif fwd and not text:
             text = fwd
         text = TagsFormatter.format(text)
-        if message.attachments:
-            url = await utils.get_photo_url(message)
-        elif fwd_photos:
-            url = [*fwd_photos.values()][0][0]
+    if message.attachments:
+        url = await utils.get_photo_url(message)
+    elif fwd_photos:
+        url = [*fwd_photos.values()][0][0]
 
     fut = utils.pool.submit(create_demotivator, text.splitlines(), url)
     fut.add_done_callback(functools.partial(utils.photo_callback, message))

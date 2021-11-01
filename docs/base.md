@@ -58,11 +58,8 @@
 Обе базы данных пополняются при поступлении новых сообщений в одной из отслеживаемых
 бесед.
 ### Ссылки
-Реализация поиска по ключевым словам: [base.py](base.py),
+Реализация поиска по ключевым словам: [base.py](../vk_specific/base.py),
 [keyword_search.lua](../redis_scripts/keyword_search.lua)
-
-Поиск случайной пары "сообщение-ответ":
-[random_pair.lua](../redis_scripts/random_pair.lua)
 
 Ежедневная очистка БД, чтобы на одну беседу приходилось не более N байт сообщений:
 [daily_cleanup.lua](../redis_scripts/daily_cleanup.lua)
