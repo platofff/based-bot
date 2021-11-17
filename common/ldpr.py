@@ -2,10 +2,13 @@ from wand.image import Image
 
 
 class Zhirinovsky:
-    @staticmethod
-    def suggested(txt):
+    def __init__(self):
+        with open('zhirinovsky.jpeg', 'rb') as f:
+            self._pattern = f.read()
+
+    def suggested(self, txt):
         text = f"<span color='#000000' size='38000' font_family='sans'>{txt.upper()}</span>"
-        with Image(filename='zhirinovsky.jpeg') as img:
+        with Image(blob=self._pattern) as img:
             with Image(width=560, height=360) as img2:
                 img2.options['pango:wrap'] = 'word-char'
                 img2.options['pango:single-paragraph'] = 'false'

@@ -2,7 +2,6 @@ import functools
 
 from vkbottle.bot import Blueprint, Message
 
-from common.ldpr import Zhirinovsky
 from vk_specific import utils
 
 bp = Blueprint()
@@ -22,5 +21,5 @@ async def zhirinovsky_suggested_handler(message: Message):
     elif fwd:
         text = fwd
 
-    fut = utils.pool.submit(Zhirinovsky.suggested, text)
+    fut = utils.pool.submit(utils.common.zhirinovsky.suggested, text)
     fut.add_done_callback(functools.partial(utils.photo_callback, message))
