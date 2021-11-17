@@ -55,12 +55,12 @@ class Chat:
             await self.db.set(key, lim, ex=3600)
         return lim
 
-    async def toggle_messages_store_state(self, chat: int) -> bool:
-        if await self.db.sismember('mstore', chat):
-            await self.db.srem('mstore', chat)
+    async def toggle_messages_store_state(self, conversation_id: int) -> bool:
+        if await self.db.sismember('mstore', conversation_id):
+            await self.db.srem('mstore', conversation_id)
             return False
         else:
-            await self.db.sadd('mstore', chat)
+            await self.db.sadd('mstore', conversation_id)
             return True
 
     async def is_storing(self, conversation_id: int) -> bool:
