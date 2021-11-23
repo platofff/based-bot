@@ -11,6 +11,7 @@ class Nouveau:
         for url in urls:
             img = Image(blob=request.urlopen(url).read())
             img.transform(resize='500x500>')
+            img.transform(resize='500x500<')
             img.format = 'jpeg'
             img.compression_quality = quality
             result.append(img.make_blob())

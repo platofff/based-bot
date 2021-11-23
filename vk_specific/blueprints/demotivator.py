@@ -19,12 +19,16 @@ async def search_images_ttl(keywords: str) -> List[str]:
         return list(res)
     else:
         res = await asyncio.get_running_loop().run_in_executor(None, utils.common.img_search.search, keywords)
-        await utils.common.chat.db.sadd(key, *res)
-        await utils.common.chat.db.expire(key, 60)
+        if res:
+            await utils.common.chat.db.sadd(key, *res)
+            last_img_search = await utils.common.chat.db.get('last_img_search')
+            if last_img_search:
+                await utils.common.chat.db.expire(last_img_search, 60)
+            await utils.common.chat.db.set('last_img_search', key)
         return res
 
 
-def create_demotivator(args: list, url: str, search_results: List[str]) -> bytes:
+def create_demotivator(args: list, url: str, search_results: List[str], not_found: List[str]) -> bytes:
     while True:
         dem = utils.common.demotivator.create(url, args[0], args[1:])
         if dem:
@@ -35,7 +39,7 @@ def create_demotivator(args: list, url: str, search_results: List[str]) -> bytes
             if search_results:
                 url = random.choice(search_results)
             else:
-                search_results = utils.common.img_search.search('kernel panic')  # TODO caching
+                search_results = not_found
                 url = random.choice(search_results)
 
 
@@ -66,16 +70,19 @@ async def demotivator_handler(message: Message):
     search_results = None
     args = text.splitlines()
 
-    async def kernel_panic():
-        _search_results = await search_images_ttl('kernel panic')
-        return _search_results, random.choice(_search_results)
+    last_img_search = await utils.common.chat.db.get('last_img_search')
+    if last_img_search:
+        not_found = list(await utils.common.chat.db.smembers(last_img_search))
+    else:
+        not_found = None
 
     if not url:
         search_results = await search_images_ttl(args[0])
         if search_results:
             url = random.choice(search_results)
         else:
-            search_results, url = await kernel_panic()
+            search_results = not_found
+            url = random.choice(search_results)
 
-    fut = utils.pool.submit(create_demotivator, args, url, search_results)
+    fut = utils.pool.submit(create_demotivator, args, url, search_results, not_found)
     fut.add_done_callback(functools.partial(utils.photo_callback, message))

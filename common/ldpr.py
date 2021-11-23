@@ -1,3 +1,5 @@
+import re
+
 from wand.image import Image
 
 
@@ -7,7 +9,8 @@ class Zhirinovsky:
             self._pattern = f.read()
 
     def suggested(self, txt):
-        text = f"<span color='#000000' size='38000' font_family='sans'>{txt.upper()}</span>"
+        txt = re.sub('^(ЕСТЬ ИДЕЯ|МБ|МОЖЕТ БЫТЬ|ПРЕДЛАГАЮ|А МОЖЕТ|МОЖЕТ|ДАВАЙТЕ|ДАВАЙ) ', '', txt.upper())
+        text = f"<span color='#000000' size='38000' font_family='sans'>{txt}</span>"
         with Image(blob=self._pattern) as img:
             with Image(width=560, height=360) as img2:
                 img2.options['pango:wrap'] = 'word-char'

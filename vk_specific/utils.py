@@ -15,6 +15,7 @@ from vkbottle_types.objects import MessagesForeignMessage, MessagesMessageAttach
     PhotosPhotoSizesType, MessagesMessage
 
 from common import utils as common
+from common.exchange import Exchange
 from vk_specific.base import Base
 
 bp = Blueprint()
@@ -144,9 +145,10 @@ commands = SimpleNamespace(start=['/начать', '/start', '/команды', 
                            zhirinovskysuggested=['/жириновский', '/жирик', '/zhirinovsky'],
                            friday=['/friday', '/пятница'],
                            base=['/base', '/база'],
-                           btc=['/btc', '/бтц', '/bitcoin', '/биткоин', '/тюльпаны'])
+                           exchange=['/биржа', '/exchange'])
 loop = asyncio.new_event_loop()
 
 photo_uploader: PhotoMessageUploader
 docs_uploader: DocMessagesUploader
 base: Base
+exchange: Exchange
