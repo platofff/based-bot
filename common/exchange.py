@@ -34,7 +34,7 @@ class Exchange:
         def __str__(self):
             res = []
             for order in self.list:
-                res.append(f'Бинарный опцион, тип {"call" if order[2] else "put"}, {order[1]} USD, цена {order[3]} '
+                res.append(f'Бинарный опцион, тип {"put" if order[2] else "call"}, {order[1]} USD, цена {order[3]} '
                            f'за BTC, экспирация {datetime.fromtimestamp(order[4]).strftime("%H:%M:%S")}')
             return '\n'.join(res)
 
