@@ -94,7 +94,7 @@ Ask: {(await self.db.get('btcusd_ask')).decode('utf8')} USD
             expiry = time.time() + duration * 60
             await self.db.set(balance_key, balance - _sum)
             await self.db.sadd('btcusd_options', pickle.dumps(
-                (user, _sum * 1.88, direction == 'call', price, expiry)))
+                (user, _sum * 1.88, direction == 'put', price, expiry)))
 
             return f'Куплен опцион на {_sum} USD типа {direction} при цене {price} USD за BTC. ' \
                    f'Экспирация в {datetime.fromtimestamp(expiry).strftime("%H:%M:%S")}.'
