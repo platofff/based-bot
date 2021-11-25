@@ -19,7 +19,11 @@ async def exchange_handler(message: Message):
         task = asyncio.ensure_future(utils.photo_uploader.upload(fut.result()), loop=utils.loop)
         task.add_done_callback(callback)
 
-    subcommand = message.text.lower().split()[1]
+    command = message.text.lower().split()
+    try:
+        subcommand = command[1]
+    except IndexError:
+        return await message.answer('Биржа находится на стадии разработки')
     if subcommand in ('инфо', 'info'):
         await message.answer(await utils.exchange.get_info(f'vk{message.from_id}'))
     elif subcommand in ('курс', 'btc', 'биткоин', 'тюльпаны', 'график', 'chart'):
@@ -28,5 +32,9 @@ async def exchange_handler(message: Message):
             await message.answer(attachment=photo)
         else:
             await utils.exchange.get_chart(photo_callback)
+    elif subcommand in ('опцион', 'option'):
+        if len(command) != 5:
+            return await message.answer(utils.exchange.option_usage)
+        await message.answer(await utils.exchange.new_option(f'vk{message.from_id}', command[2], command[3], command[4]))
     else:
         await message.answer('Биржа находится на стадии разработки')
