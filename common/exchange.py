@@ -79,6 +79,8 @@ Ask: {(await self.db.get('btcusd_ask')).decode('utf8')} USD
             _sum = float(_sum)
         except ValueError:
             return self.option_usage
+        if _sum <= 0.0:
+            return self.option_usage
         if duration.isnumeric() and duration in ('1', '5', '15', '30', '60'):
             duration = int(duration)
         else:
@@ -92,7 +94,7 @@ Ask: {(await self.db.get('btcusd_ask')).decode('utf8')} USD
             expiry = time.time() + duration * 60
             await self.db.set(balance_key, balance - _sum)
             await self.db.sadd('btcusd_options', pickle.dumps(
-                (user, _sum * 1.8, direction == 'call', price, expiry)))
+                (user, _sum * 1.88, direction == 'call', price, expiry)))
 
             return f'Куплен опцион на {_sum} USD типа {direction} при цене {price} USD за BTC. ' \
                    f'Экспирация в {datetime.fromtimestamp(expiry).strftime("%H:%M:%S")}.'
