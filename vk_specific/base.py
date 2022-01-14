@@ -13,6 +13,7 @@ from random import choice, randint
 import aiofiles
 import aioredis
 import pymorphy2
+from aioredis import BusyLoadingError
 from vkbottle.bot import Message
 
 from common.tagsformatter import TagsFormatter
@@ -53,7 +54,15 @@ class Base:
         self._messages_db = await aioredis.from_url(redis_uri, encoding='utf-8', decode_responses=True, db=4)
         self._keywords_db = await aioredis.from_url(redis_uri, encoding='utf-8', decode_responses=True, db=5)
         async with aiofiles.open('redis_scripts/keyword_search.lua', mode='r') as f:
-            self._keywords_search = await self._keywords_db.script_load(await f.read())
+            script = await f.read()
+        while True:
+            try:
+                self._keywords_search = await self._keywords_db.script_load(script)
+            except BusyLoadingError:
+                logger.info('Waiting for Redis ready...')
+                await asyncio.sleep(2)
+                continue
+            break
         async with aiofiles.open('redis_scripts/daily_cleanup.lua', mode='r') as f:
             self._daily_cleanup = await self._messages_db.script_load(await f.read())
         async with aiofiles.open('redis_scripts/random_pair.lua', mode='r') as f:

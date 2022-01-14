@@ -5,7 +5,6 @@ from vkbottle import Bot, DocMessagesUploader
 from vkbottle.tools.dev_tools.uploader import PhotoMessageUploader
 
 from common.chat import Chat
-from common.exchange import ExchangeProcess, Exchange
 from common.objection import Objection
 from vk_specific import utils
 from vk_specific.base import Base
@@ -19,8 +18,6 @@ bot = Bot(getenv('VK_BOT_TOKEN'), loop=utils.loop)
 redis_uri = getenv('REDIS_URI')
 utils.photo_uploader = PhotoMessageUploader(bot.api, generate_attachment_strings=True)
 utils.docs_uploader = DocMessagesUploader(bot.api, generate_attachment_strings=True)
-exchange_process = ExchangeProcess(redis_uri)
-exchange_process.start()
 
 
 async def main():
@@ -28,7 +25,6 @@ async def main():
     utils.common.objection = await Objection.new(redis_uri)
     utils.common.chat = await Chat.new(redis_uri, utils.commands.__dict__)
     utils.base = await Base.new(redis_uri)
-    utils.exchange = await Exchange.new(redis_uri, utils.pool)
     for bp in bps:
         bp.load(bot)
 
