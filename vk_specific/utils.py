@@ -15,7 +15,6 @@ from vkbottle_types.objects import MessagesForeignMessage, MessagesMessageAttach
     PhotosPhotoSizesType, MessagesMessage
 
 from common import utils as common
-from common.exchange import Exchange
 from vk_specific.base import Base
 
 bp = Blueprint()
@@ -151,4 +150,3 @@ loop = asyncio.new_event_loop()
 photo_uploader: PhotoMessageUploader
 docs_uploader: DocMessagesUploader
 base: Base
-exchange: Exchange
