@@ -18,6 +18,7 @@ class Zhirinovsky:
                 img2.font_color = '#000000'
                 img2.font_size = 44
                 img2.pseudo(560, 360, pseudo=f"pango:{txt}")
+                img2.sharpen(radius=8, sigma=4)
                 img.composite(image=img2, left=50, top=630)
             img.merge_layers('flatten')
             img.format = 'jpeg'
