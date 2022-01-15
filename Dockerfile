@@ -1,5 +1,6 @@
 FROM opensuse/leap:15.3
 ADD ./requirements.txt /home/app/requirements.txt
+ADD ./fonts/OswaldRegular.ttf /usr/share/fonts/truetype/OswaldRegular.ttf
 RUN zypper ar -f https://download.opensuse.org/repositories/home:/flacco:/rtk:/php7/15.3/ imagemagick &&\
  zypper -n --gpg-auto-import-keys ref &&\
  ln -s /usr/share/zoneinfo/Europe/Moscow /etc/localtime &&\
