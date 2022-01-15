@@ -10,7 +10,7 @@ class Zhirinovsky:
 
     def suggested(self, txt):
         txt = re.sub('^(ЕСТЬ ИДЕЯ|МБ|МОЖЕТ БЫТЬ|ПРЕДЛАГАЮ|А МОЖЕТ|МОЖЕТ|ДАВАЙТЕ|ДАВАЙ) ', '', txt.upper())
-        text = f"<span color='#000000' size='38000' font_family='Oswald-Regular'>{txt}</span>"
+        text = f"<span color='#000000' size='38000' font_family='/home/app/fonts/Oswald-Regular.ttf'>{txt}</span>"
         with Image(blob=self._pattern) as img:
             with Image(width=560, height=360) as img2:
                 img2.options['pango:wrap'] = 'word-char'
