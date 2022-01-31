@@ -67,7 +67,7 @@ def command_limit(command: str, interval: int = 1000):
     return decorator
 
 
-async def get_photo_url(message: Union[Message, MessagesForeignMessage], _all=False) -> Union[str, List[str]]:
+async def get_photo_url(message: Union[Message, MessagesForeignMessage], _all=False) -> Union[str, List[str], None]:
     async def process(attachment: MessagesMessageAttachment) -> str:
         url = None
         if attachment.type == MessagesMessageAttachmentType.PHOTO:
@@ -83,7 +83,10 @@ async def get_photo_url(message: Union[Message, MessagesForeignMessage], _all=Fa
 
     if _all:
         return list(await asyncio.gather(*[process(a) for a in message.attachments if 'photo' in dir(a)]))
-    return await process(message.attachments[0])
+    if message.attachments:
+        return await process(message.attachments[0])
+    else:
+        return None
 
 
 async def unpack_fwd(message: Union[Message, MessagesMessage], photos_max: Optional[Union[int, bool]] = 1) -> \
