@@ -1,4 +1,5 @@
 import functools
+import itertools
 
 from vkbottle.bot import Blueprint, Message
 
@@ -13,7 +14,7 @@ async def cum_handler(message: Message):
     photo = await utils.get_photo_url(message)
     if photo is None:
         _, photos, _ = await utils.unpack_fwd(message)
-        photos = photos.values()
+        photos = list(itertools.chain.from_iterable(photos.values()))
         try:
             photo = photos[0]
         except IndexError:
