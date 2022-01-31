@@ -148,7 +148,8 @@ commands = SimpleNamespace(start=['/начать', '/start', '/команды', 
                            friday=['/friday', '/пятница'],
                            base=['/base', '/база'],
                            exchange=['/биржа', '/exchange'],
-                           cum=['/cum', '/кончил'])
+                           cum=['/cum', '/кончил'],
+                           roll=['/roll', '/ролл'])
 loop = asyncio.new_event_loop()
 
 photo_uploader: PhotoMessageUploader
