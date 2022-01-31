@@ -9,4 +9,4 @@ bp = Blueprint()
 @bp.on.message(utils.CommandRule(utils.commands.start))
 @utils.command_limit('roll')
 async def roll_handler(message: Message):
-    await message.answer(Roll.get())
+    await message.answer(Roll.get(utils.get_arguments(message.text)))
