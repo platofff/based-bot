@@ -10,7 +10,7 @@ bp = Blueprint()
 @bp.on.message(utils.CommandRule(utils.commands.cum))
 @utils.command_limit('cum')
 async def cum_handler(message: Message):
-    photo = utils.get_photo_url(message)
+    photo = await utils.get_photo_url(message)
     if photo is None:
         _, photos, _ = await utils.unpack_fwd(message, photos_max=1)
         if not photos:
