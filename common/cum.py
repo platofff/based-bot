@@ -13,7 +13,7 @@ class Cum:
         with Image(file=image) as img1:
             with Image(blob=self._overlay) as img2:
                 img2.transform(resize=f'{img1.size[0]}x{img1.size[1]}')
-                img1.composite(img2, left=0, bottom=0)
+                img1.composite(img2, left=0, top=img1.size[1] - img2.size[1])
                 img1.format = 'jpeg'
                 res = img1.make_blob()
         image.close()
