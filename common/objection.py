@@ -42,7 +42,7 @@ class Objection:
         async with self._db.pipeline(transaction=True) as tr:
             for author in messages:
                 tr = tr.get(f'{user_id}_{author[0]}')
-            poses = [int(x) if x else None for x in await tr.execute()]
+            poses = await tr.execute()
         for i in range(len(poses)):
             phrase = self._jsonPattern.copy()
             phrase['username'] = messages[i][0]
@@ -63,7 +63,10 @@ class Objection:
                                               }) as resp:
                         phrase['text'] += f'[#evd{await resp.text()}][#p1000][#evdh]'
             if poses[i]:
-                phrase['poseId'] = poses[i]
+                text = phrase['text']
+                phrase = json.loads(poses[i])
+                phrase['text'] = text
+                phrase.pop('iid', None)
             result.append(phrase)
         return base64.b64encode(bytes(json.dumps(result, ensure_ascii=False), 'utf8'))
 
@@ -72,9 +75,10 @@ class Objection:
         print(objection)
         processed = {}
         async with self._db.pipeline(transaction=True) as tr:
-            for phrase in objection['frames']:
+            for phrase in objection['groups'][0]['frames']:
                 if not phrase['username'] in processed:
-                    tr = tr.set(f'{user_id}_{phrase["username"]}', phrase['poseId'])
+                    phrase.pop('text', None)
+                    tr = tr.set(f'{user_id}_{phrase["username"]}', json.dumps(phrase))
                     processed.update({phrase['username']: phrase['poseId']})
             await tr.execute()
         return '\n'.join([f'Персонажу {key} назначается поза {value}' for key, value in processed.items()])
