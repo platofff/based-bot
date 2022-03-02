@@ -23,10 +23,10 @@ bp = Blueprint()
 class CommandRule(rules.ABCMessageRule):
     def __init__(self, command: List[str]):
         rules.ABCMessageRule.__init__(self)
-        self._command = command
+        self._command = [re.compile(r'^' + x + r'(\s|$)') for x in command]
 
     async def check(self, message: Message) -> bool:
-        return any(message.text.lower().startswith(x) for x in self._command)
+        return any(x.match(message.text) is not None for x in self._command)
 
 
 class FromBotAdminRule(rules.ABCMessageRule):
